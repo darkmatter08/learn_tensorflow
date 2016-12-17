@@ -39,6 +39,8 @@ max_lr = 0.01
 min_lr = max_lr / 100
 decay_speed = 2000.0
 
+keep_rate = tf.placeholder(tf.float32)
+
 batch_size = 100
 
 # CONV PARAMETERS
@@ -94,7 +96,9 @@ S2r = tf.reshape(S2, [-1, R2_output_sz*R2_output_sz*C2_n_filters])
 FC1 = tf.matmul(S2r, fc1w)
 R3 = tf.nn.relu(FC1 + fc1b)
 
-FC2 = tf.matmul(FC1, fc2w) + fc2b
+DO = tf.nn.dropout(R3, keep_rate)
+
+FC2 = tf.matmul(DO, fc2w) + fc2b
 pred = tf.nn.softmax(FC2)
 
 # Define loss
@@ -117,7 +121,7 @@ accuracy = tf.reduce_mean(tf.cast(eq, tf.float32))
 
 # TODO:
 # add dropout
-# add decaying learning rate
+
 
 init = tf.global_variables_initializer()
 
@@ -131,10 +135,12 @@ with tf.Session() as sess:
 			feed_data = {
 				X: x_batch,
 				Y: y_batch,
-				learning_rate: lr
+				learning_rate: lr,
+				keep_rate: 1.0
 			}
 			sess.run(training_step, feed_dict=feed_data)
 
 		if epoch % 100 == 0:
+			feed_data[keep_rate] = 1.0
 			acc = sess.run(accuracy, feed_dict=feed_data)
 			print "At epoch %d, accuracy: %f, learning rate: %f" % (epoch, acc, lr)
