@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import math
 tf.set_random_seed(0)
 
 data = tf.contrib.learn.python.learn.datasets.mnist.read_data_sets(
@@ -32,7 +33,12 @@ n_cat = 10
 n_chan = 1
 
 # HYPERPARAMETERS
-learning_rate = 0.01
+# learning_rate = 0.01
+learning_rate = tf.placeholder(tf.float32)
+max_lr = 0.01
+min_lr = max_lr / 100
+decay_speed = 2000.0
+
 batch_size = 100
 
 # CONV PARAMETERS
@@ -121,12 +127,14 @@ with tf.Session() as sess:
 	for epoch in range(data.train.num_examples/batch_size):
 		x_batch, y_batch = data.train.next_batch(batch_size)
 		for i in range(2):
+			lr = min_lr + (max_lr - min_lr) * math.exp(-epoch/decay_speed)
 			feed_data = {
 				X: x_batch,
-				Y: y_batch
+				Y: y_batch,
+				learning_rate: lr
 			}
 			sess.run(training_step, feed_dict=feed_data)
 
 		if epoch % 100 == 0:
 			acc = sess.run(accuracy, feed_dict=feed_data)
-			print "At epoch %d, accuracy: %f" % (epoch, acc)
+			print "At epoch %d, accuracy: %f, learning rate: %f" % (epoch, acc, lr)
