@@ -37,7 +37,8 @@ n_chan = 1
 learning_rate = tf.placeholder(tf.float32)
 max_lr = 0.01
 min_lr = max_lr / 100
-decay_speed = 2000.0
+decay_speed = 250.0
+reps = 3
 
 keep_rate = tf.placeholder(tf.float32)
 
@@ -119,28 +120,36 @@ true_category = tf.argmax(Y, 1)
 eq = tf.equal(pred_category, true_category)
 accuracy = tf.reduce_mean(tf.cast(eq, tf.float32))
 
-# TODO:
-# add dropout
-
-
 init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
 	sess.run(init)
+	print "max_lr %f, min_lr %f, decay_speed %f, reps %d" % (max_lr, min_lr, decay_speed, reps)
 
 	for epoch in range(data.train.num_examples/batch_size):
 		x_batch, y_batch = data.train.next_batch(batch_size)
-		for i in range(2):
-			lr = min_lr + (max_lr - min_lr) * math.exp(-epoch/decay_speed)
+		for i in range(reps):
+			lr = min_lr + (max_lr - min_lr) * math.exp(-(epoch*i)/decay_speed)
 			feed_data = {
 				X: x_batch,
 				Y: y_batch,
 				learning_rate: lr,
-				keep_rate: 1.0
+				keep_rate: 1
 			}
 			sess.run(training_step, feed_dict=feed_data)
 
-		if epoch % 100 == 0:
-			feed_data[keep_rate] = 1.0
-			acc = sess.run(accuracy, feed_dict=feed_data)
-			print "At epoch %d, accuracy: %f, learning rate: %f" % (epoch, acc, lr)
+			if (epoch*i) % 100 == 0:
+				feed_data[keep_rate] = 1.0
+				acc = sess.run(accuracy, feed_dict=feed_data)
+				print "At epoch: %d, i: %d, epoch*i: %d, accuracy: %f, learning rate: %f" % (epoch, i, epoch*i, acc, lr)
+
+	# Test set accuracies
+	x_test, y_test = data.test.next_batch(data.test.num_examples)
+	feed_data = {
+		X: x_test,
+		Y: y_test,
+		learning_rate: 0,
+		keep_rate: 1
+	}
+	acc = sess.run(accuracy, feed_dict=feed_data)
+	print "Test set accuracy: %f" % (acc,)
