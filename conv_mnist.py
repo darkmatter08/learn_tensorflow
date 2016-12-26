@@ -39,6 +39,7 @@ max_lr = 0.01
 min_lr = max_lr / 100
 decay_speed = 250.0
 reps = 3
+threshold = 0.99
 
 keep_rate = tf.placeholder(tf.float32)
 
@@ -53,6 +54,7 @@ C2_n_filters = 16
 
 # FC PARAMETERS
 n_fc = 100
+
 
 # INITIALIZE VARIABLES
 X = tf.placeholder(tf.float32, shape=[None, imgsz, imgsz, n_chan])
@@ -122,26 +124,42 @@ accuracy = tf.reduce_mean(tf.cast(eq, tf.float32))
 
 init = tf.global_variables_initializer()
 
+# Saver Infrastructure
+saver = tf.train.Saver()
+
 with tf.Session() as sess:
 	sess.run(init)
 	print "max_lr %f, min_lr %f, decay_speed %f, reps %d" % (max_lr, min_lr, decay_speed, reps)
 
-	for epoch in range(data.train.num_examples/batch_size):
-		x_batch, y_batch = data.train.next_batch(batch_size)
-		for i in range(reps):
-			lr = min_lr + (max_lr - min_lr) * math.exp(-(epoch*i)/decay_speed)
-			feed_data = {
-				X: x_batch,
-				Y: y_batch,
-				learning_rate: lr,
-				keep_rate: 1
-			}
-			sess.run(training_step, feed_dict=feed_data)
+	need_training = True
+	while need_training:
+		for epoch in range(data.train.num_examples/batch_size):
+			x_batch, y_batch = data.train.next_batch(batch_size)
+			for i in range(reps):
+				lr = min_lr + (max_lr - min_lr) * math.exp(-(epoch*i)/decay_speed)
+				feed_data = {
+					X: x_batch,
+					Y: y_batch,
+					learning_rate: lr,
+					keep_rate: 1
+				}
+				sess.run(training_step, feed_dict=feed_data)
 
-			if (epoch*i) % 100 == 0:
-				feed_data[keep_rate] = 1.0
-				acc = sess.run(accuracy, feed_dict=feed_data)
-				print "At epoch: %d, i: %d, epoch*i: %d, accuracy: %f, learning rate: %f" % (epoch, i, epoch*i, acc, lr)
+				if (epoch*i) % 100 == 0:
+					feed_data[keep_rate] = 1.0
+					acc = sess.run(accuracy, feed_dict=feed_data)
+					print "At epoch: %d, i: %d, epoch*i: %d, accuracy: %f, learning rate: %f" % (epoch, i, epoch*i, acc, lr)
+					if acc >= threshold:
+						# save tensorflow model
+						save_path = saver.save(sess, "trained/conv_mnist/model.ckpt")
+						print "Model saved in file: %s" % save_path
+						need_training = False
+			if not need_training:
+				break
+
+with tf.Session() as sess:
+	saver.restore(sess, save_path)
+	print "Loaded from %s" % (save_path,)
 
 	# Test set accuracies
 	x_test, y_test = data.test.next_batch(data.test.num_examples)
