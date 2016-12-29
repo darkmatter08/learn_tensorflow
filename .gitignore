@@ -1,5 +1,6 @@
 
 MNIST-data/*
+MNIST_data/*
 TensorFlow-Examples/*
 data/*
 models/*

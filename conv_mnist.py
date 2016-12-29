@@ -106,7 +106,7 @@ pred = tf.nn.softmax(FC2)
 
 # Define loss
 loss = tf.nn.softmax_cross_entropy_with_logits(FC2, Y)
-loss = tf.reduce_mean(loss)*100 # DON'T UNDERSTAND!
+loss = tf.reduce_mean(loss) # DON'T UNDERSTAND!
 
 # Define optimizer method
 # optimizer = tf.train.GradientDescentOptimizer(learning_rate)
@@ -133,27 +133,26 @@ with tf.Session() as sess:
 
 	need_training = True
 	while need_training:
-		for epoch in range(data.train.num_examples/batch_size):
+		for epoch in range(5000): #data.train.num_examples/batch_size
 			x_batch, y_batch = data.train.next_batch(batch_size)
-			for i in range(reps):
-				lr = min_lr + (max_lr - min_lr) * math.exp(-(epoch*i)/decay_speed)
-				feed_data = {
-					X: x_batch,
-					Y: y_batch,
-					learning_rate: lr,
-					keep_rate: 1
-				}
-				sess.run(training_step, feed_dict=feed_data)
+			lr = min_lr + (max_lr - min_lr) * math.exp(-(epoch)/decay_speed)
+			feed_data = {
+				X: x_batch,
+				Y: y_batch,
+				learning_rate: lr,
+				keep_rate: 1
+			}
+			sess.run(training_step, feed_dict=feed_data)
 
-				if (epoch*i) % 100 == 0:
-					feed_data[keep_rate] = 1.0
-					acc = sess.run(accuracy, feed_dict=feed_data)
-					print "At epoch: %d, i: %d, epoch*i: %d, accuracy: %f, learning rate: %f" % (epoch, i, epoch*i, acc, lr)
-					if acc >= threshold:
-						# save tensorflow model
-						save_path = saver.save(sess, "trained/conv_mnist/model.ckpt")
-						print "Model saved in file: %s" % save_path
-						need_training = False
+			if (epoch) % 20 == 0:
+				feed_data[keep_rate] = 1.0
+				acc = sess.run(accuracy, feed_dict=feed_data)
+				print "At epoch: %d, accuracy: %f, learning rate: %f" % (epoch, acc, lr)
+				if acc >= threshold:
+					# save tensorflow model
+					save_path = saver.save(sess, "trained/conv_mnist/model.ckpt")
+					print "Model saved in file: %s" % save_path
+					need_training = False
 			if not need_training:
 				break
 
