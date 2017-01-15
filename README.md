@@ -5,7 +5,9 @@ Learning Tensorflow
 
 ```bash
 $ virtualenv tfvenv
+$ source tfvenv/bin/activate
 $ pip install tensorflow ipython jupyter matplotlib
+$ pip install scipy Pillow
 $ git clone https://github.com/aymericdamien/TensorFlow-Examples
 $ git clone https://github.com/tensorflow/tensorflow
 $ git clone https://github.com/tensorflow/models
