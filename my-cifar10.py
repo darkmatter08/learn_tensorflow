@@ -2,6 +2,42 @@
 
 import tensorflow as tf
 from tensorflow.models.image.cifar10 import cifar10
+import scipy.misc
+
+################
+# LOAD DATA
+IMSZ = 32
+NCHAN = 3
+
+def unpickle(file):
+    import cPickle
+    fo = open(file, 'rb')
+    dict = cPickle.load(fo)
+    fo.close()
+    return dict
+
+f = '/Users/jains/OneDrive/Documents/MIT/IAP17/learn_tensorflow/cifar-10-batches-py/data_batch_'
+
+fno in range(1, 6):
+	db1 = unpickle(f)
+	i = db1['data']
+	i1 = i[0]
+	i1r = i1.reshape(NCHAN,IMSZ,IMSZ)
+	i1rs = scipy.misc.imresize(i1r, (X_SZ, Y_SZ))
+	scipy.misc.imshow(i1rs)
+
+################
+
+################
+# TODO: PREPROCESS DATA
+################
+# tf.random_crop
+# tf.image.random_flip_left_right
+# tf.image.random_brightness
+# tf.image.random_contrast
+# tf.image.per_image_standardization
+################
+
 
 def var(shape):
 	return tf.Variable(tf.random_normal(shape))
